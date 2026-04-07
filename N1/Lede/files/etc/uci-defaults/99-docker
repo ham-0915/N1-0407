@@ -1,0 +1,4 @@
+#!/bin/sh
+# 本固件dockerman的服务默认是开启的，如果你不使用docker，请手动禁用。
+/etc/init.d/dockerd enable
+exit 0
