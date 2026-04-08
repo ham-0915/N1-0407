@@ -52,45 +52,14 @@ if [ -f feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm ]; then
 fi
 
 
-
 # =========================================================
-# 7. Bandix 自动化集成（带严格错误检查）
+# 7. Bandix源码
 # =========================================================
-echo ">>> 正在启动 Bandix 集成程序..."
+echo ">>> 正在克隆 Bandix 前后端源码..."
 
-# 获取版本号并检查是否为空
-BANDIX_FRONT_LATEST=$(curl -s "https://api.github.com/repos/timsaya/luci-app-bandix/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
-BANDIX_BACK_LATEST=$(curl -s "https://api.github.com/repos/timsaya/openwrt-bandix/releases/latest" | grep '"tag_name"' | cut -d'"' -f4 | sed 's/v//')
+# 克隆前端源码
+git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-bandix
+# 克隆后端源码 (编译系统会自动寻找里面的 Makefile 并处理依赖)
+git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
-# 【新增】版本抓取失败则强制退出编译
-if [ -z "$BANDIX_FRONT_LATEST" ] || [ -z "$BANDIX_BACK_LATEST" ]; then
-    echo "❌ [ERROR] 无法从 GitHub 获取 Bandix 最新版本号，终止编译！"
-    exit 1
-fi
-
-# 【新增】下载前端源码，失败则报错退出
-git clone https://github.com/timsaya/luci-app-bandix --depth=1 -b ${BANDIX_FRONT_LATEST} package/bandix || {
-    echo "❌ [ERROR] 克隆 Bandix 前端仓库失败！"
-    exit 1
-}
-
-# 【新增】下载后端并存入 files 目录
-mkdir -p files/root files/etc/uci-defaults
-curl -L "https://github.com/timsaya/openwrt-bandix/releases/download/v${BANDIX_BACK_LATEST}/bandix_${BANDIX_BACK_LATEST}-r1_aarch64_cortex-a53.ipk" \
-     -o files/root/bandix_backend.ipk || {
-    echo "❌ [ERROR] 下载 Bandix 后端 IPK 失败！"
-    exit 1
-}
-
-# 【新增】写入带 logger 日志记录的首次启动安装脚本
-cat > files/etc/uci-defaults/99-install-bandix << 'EOF'
-#!/bin/sh
-if [ -f /root/bandix_backend.ipk ]; then
-    logger -t "BANDIX" "开始自动安装后端核心..."
-    opkg install /root/bandix_backend.ipk && rm -f /root/bandix_backend.ipk
-    logger -t "BANDIX" "后端核心安装任务结束。"
-fi
-EOF
-
-chmod +x files/etc/uci-defaults/99-install-bandix
-echo "✅ Bandix 集成逻辑已就绪。"
+echo "✅ Bandix 源码拉取完成，等待编译系统处理依赖。"
