@@ -50,6 +50,10 @@ git clone https://github.com/sbwml/luci-app-mosdns -b v5 --depth=1 package/mosdn
 git clone https://github.com/sbwml/luci-app-openlist2 --depth=1 package/openlist2
 git clone https://github.com/nikkinikki-org/OpenWrt-nikki --depth=1 package/nikki
 git clone https://github.com/vernesong/OpenClash --depth=1 package/openclash
+
+git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-bandix
+git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
+
 # git clone https://github.com/sirpdboy/luci-app-timecontrol package/luci-app-timecontrol
 
 
@@ -58,4 +62,3 @@ if [ -f feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm ]; then
     sed -i 's/<%:Up%>/<%:Move up%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
     sed -i 's/<%:Down%>/<%:Move down%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
 fi
-
