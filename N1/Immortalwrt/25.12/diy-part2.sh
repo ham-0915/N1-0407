@@ -54,7 +54,7 @@ git clone https://github.com/vernesong/OpenClash --depth=1 package/openclash
 git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-bandix
 git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
-git clone https://github.com/sirpdboy/luci-app-timecontrol package/luci-app-timecontrol
+# git clone https://github.com/sirpdboy/luci-app-timecontrol package/luci-app-timecontrol
 
 
 # 7. 修正 25.12 兼容层的按钮翻译
