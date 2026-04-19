@@ -48,8 +48,6 @@ git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-ba
 
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
 
-git clone https://github.com/destan19/OpenAppFilter.git package/OpenAppFilter
-
 
 # 6. 修正 25.12 兼容层的按钮翻译
 if [ -f feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm ]; then
