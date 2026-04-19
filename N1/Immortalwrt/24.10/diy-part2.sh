@@ -47,9 +47,8 @@ git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-
 git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
-git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 /tmp/luci-app-timecontrol
-cp -r /tmp/luci-app-timecontrol/luci-app-nft-timecontrol package/luci-app-nft-timecontrol
-rm -rf /tmp/luci-app-timecontrol
+
+git clone https://github.com/destan19/OpenAppFilter.git package/OpenAppFilter
 
 
 # 6. 修正 25.12 兼容层的按钮翻译
