@@ -49,8 +49,33 @@ git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-ba
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
 
 
-# 6. 修正 25.12 兼容层的按钮翻译
-if [ -f feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm ]; then
-    sed -i 's/<%:Up%>/<%:Move up%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
-    sed -i 's/<%:Down%>/<%:Move down%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
-fi
+
+# =========================================================
+# 6. 动态生成 uci-defaults 脚本，首次开机自动彻底禁用 Docker
+
+# 创建目录（以防万一目录不存在）
+mkdir -p package/base-files/files/etc/uci-defaults
+
+# 写入防自启脚本（EOF之间的内容会被原样写入文件）
+cat << "EOF" > package/base-files/files/etc/uci-defaults/99-disable-docker
+#!/bin/sh
+
+# 禁用服务
+/etc/init.d/dockerd disable
+/etc/init.d/dockerman disable
+
+# 关闭底层 UCI 启用开关，防热插拔或网络状态变化唤醒
+uci set dockerd.globals.enabled='0'
+uci commit dockerd
+
+uci set dockerman.global.enabled='0'
+uci commit dockerman
+
+exit 0
+EOF
+
+# 赋予可执行权限
+chmod +x package/base-files/files/etc/uci-defaults/99-disable-docker
+# =========================================================
+
+
