@@ -52,19 +52,21 @@ git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-ba
 
 # =========================================================
 # 6. 动态生成 uci-defaults 脚本，首次开机自动彻底禁用 Docker
+# =========================================================
 
-# 创建目录（以防万一目录不存在）
+echo "======== 开始执行: 动态生成禁用 Docker 脚本 ========"
+
+# 1. 创建目录
 mkdir -p package/base-files/files/etc/uci-defaults
+echo "[检查] uci-defaults 目录准备完毕"
 
-# 写入防自启脚本（EOF之间的内容会被原样写入文件）
+# 2. 写入防自启脚本
 cat << "EOF" > package/base-files/files/etc/uci-defaults/99-disable-docker
 #!/bin/sh
 
-# 禁用服务
 /etc/init.d/dockerd disable
 /etc/init.d/dockerman disable
 
-# 关闭底层 UCI 启用开关，防热插拔或网络状态变化唤醒
 uci set dockerd.globals.enabled='0'
 uci commit dockerd
 
@@ -73,9 +75,17 @@ uci commit dockerman
 
 exit 0
 EOF
+echo "[成功] 99-disable-docker 脚本内容已写入"
 
-# 赋予可执行权限
+# 3. 赋予可执行权限
 chmod +x package/base-files/files/etc/uci-defaults/99-disable-docker
-# =========================================================
+echo "[成功] 已赋予脚本可执行权限 (+x)"
+
+# 4. 打印一下文件的详细信息，在日志里作为证据验证
+echo ">> 查看生成的文件属性："
+ls -l package/base-files/files/etc/uci-defaults/99-disable-docker
+
+echo "======== 禁用 Docker 脚本配置完成！ ========"
+
 
 
