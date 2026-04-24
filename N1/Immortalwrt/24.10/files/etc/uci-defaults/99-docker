@@ -1,6 +1,0 @@
-#!/bin/sh
-
-# 禁用/开启（disable/enable） dockerd 和 dockerman 服务
-/etc/init.d/dockerd disable
-/etc/init.d/dockerman disable
-exit 0
