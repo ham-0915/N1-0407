@@ -28,7 +28,7 @@ rm -rf package/feeds/packages/onionshare-cli
 sed -i '/mjpg-streamer/d' .config 2>/dev/null || true
 sed -i '/onionshare/d' .config 2>/dev/null || true
 rm -rf feeds/packages/admin/zabbix
-rm -rf feeds/packages/lang/python-ubus
+find feeds/packages -type d -name "*python*ubus*" -exec rm -rf {} +
 
 
 # 4. 克隆 Passwall 2
