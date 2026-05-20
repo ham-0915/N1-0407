@@ -27,8 +27,8 @@ rm -rf package/feeds/luci/luci-app-mjpg-streamer
 rm -rf package/feeds/packages/onionshare-cli
 sed -i '/mjpg-streamer/d' .config 2>/dev/null || true
 sed -i '/onionshare/d' .config 2>/dev/null || true
-rm -rf feeds/packages/net/zabbix
-rm -rf feeds/packages/utils/python-ubus
+rm -rf feeds/packages/admin/zabbix
+rm -rf feeds/packages/lang/python-ubus
 
 
 # 4. 克隆 Passwall 2
@@ -49,4 +49,5 @@ git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-
 git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
+git clone https://github.com/sbwml/luci-app-quickfile --depth=1 package/luci-app-quickfile
 
