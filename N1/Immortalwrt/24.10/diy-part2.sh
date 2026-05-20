@@ -48,4 +48,4 @@ git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-
 git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
-# git clone https://github.com/sbwml/luci-app-quickfile --depth=1 package/luci-app-quickfile
+git clone https://github.com/sbwml/luci-app-quickfile --depth=1 package/luci-app-quickfile
