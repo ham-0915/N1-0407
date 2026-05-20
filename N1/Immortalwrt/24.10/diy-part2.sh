@@ -27,6 +27,8 @@ rm -rf package/feeds/luci/luci-app-mjpg-streamer
 rm -rf package/feeds/packages/onionshare-cli
 sed -i '/mjpg-streamer/d' .config 2>/dev/null || true
 sed -i '/onionshare/d' .config 2>/dev/null || true
+rm -rf feeds/packages/net/zabbix
+rm -rf feeds/packages/utils/python-ubus
 
 
 # 4. 克隆 Passwall 2
