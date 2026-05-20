@@ -44,10 +44,8 @@ git clone https://github.com/sbwml/luci-app-mosdns -b v5 --depth=1 package/mosdn
 git clone https://github.com/sbwml/luci-app-openlist2 --depth=1 package/openlist2
 git clone https://github.com/nikkinikki-org/OpenWrt-nikki --depth=1 package/nikki
 git clone https://github.com/vernesong/OpenClash --depth=1 package/openclash
-
 git clone https://github.com/timsaya/luci-app-bandix --depth=1 package/luci-app-bandix
 git clone https://github.com/timsaya/openwrt-bandix --depth=1 package/openwrt-bandix
 
 # git clone https://github.com/sirpdboy/luci-app-timecontrol --depth=1 package/luci-app-timecontrol
-git clone https://github.com/sbwml/luci-app-quickfile --depth=1 package/luci-app-quickfile
-
+# git clone https://github.com/sbwml/luci-app-quickfile --depth=1 package/luci-app-quickfile
