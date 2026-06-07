@@ -1,0 +1,46 @@
+name: 测试打包 N1
+
+on:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Shanghai
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  pack:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+    - name: 检查 Actions
+      uses: actions/checkout@v4
+
+    - name: 打包 N1 固件
+      uses: unifreq/openwrt_packit@master
+      env:
+        WHOAMI: ham
+        OPENWRT_ARMVIRT: https://github.com/ham-0915/N1-0407/releases/download/N1-25.12_20260601/openwrt-armsr-armv8-generic-rootfs.tar.gz
+        PACKAGE_SOC: s905d
+        KERNEL_AUTO_LATEST: true
+        KERNEL_REPO_URL: ophub/kernel
+        KERNEL_VERSION_NAME: 6.12.y_6.18.y
+
+    - name: 上传到 Release
+      uses: ncipollo/release-action@v1
+      with:
+        name: "N1-测试打包-${{ env.PACKAGED_OUTPUTDATE }}"
+        tag: "test-pack-${{ env.PACKAGED_OUTPUTDATE }}"
+        artifacts: "${{ env.PACKAGED_OUTPUTPATH }}/*"
+        allowUpdates: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+        body: |
+          ### 测试打包
+          - **rootfs 来源**：ham-0915/N1-0407 N1-25.12_20260601
+          - **内核来源**：ophub/kernel（unifreq flippy 内核）
+          - **内核版本**：6.y.y 最新
+          - **网关地址**：192.168.1.1
+          - **登录账户**：root
+          - **登录密码**：password
+          
