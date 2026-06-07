@@ -187,8 +187,8 @@ jobs:
         OPENWRT_ARMVIRT: openwrt-armvirt/*.tar.gz
         PACKAGE_SOC: s905d
         KERNEL_AUTO_LATEST: true
-        KERNEL_REPO_URL: breakingbadboy/OpenWrt
-        KERNEL_VERSION_NAME: 6.6.y
+        KERNEL_REPO_URL: ophub/kernel
+        KERNEL_VERSION_NAME: 6.12.y
 
     - name: 整理发布信息
       id: release_info
