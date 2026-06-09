@@ -9,7 +9,6 @@ env:
   REPO_BRANCH: openwrt-24.10
   FEEDS_CONF: N1/Immortalwrt/24.10/TL-feeds.conf.default
   CONFIG_FILE: N1/Immortalwrt/24.10/20260407.config
-  DIY_P1_SH: N1/Immortalwrt/24.10/diy-part1.sh
   DIY_P2_SH: N1/Immortalwrt/24.10/diy-part2.sh
   CUSTOM_FILES_DIR: N1/Immortalwrt/24.10/files
   LOG_PATH: N1/Immortalwrt/24.10/logs.txt
@@ -53,10 +52,8 @@ jobs:
 
     - name: 检查服务器配置
       run: |
-        echo "::group::服务器配置信息"
+        echo "::group::服务器硬件信息"
         echo "警告⚠ 分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
-        echo "云编译建议取消勾选Node.js及其相关插件！"
-        echo "已知CPU型号（降序）：8370C,8272CL,8171M,E5系列"
         echo "--- CPU ---"
         echo "CPU物理数量: $(cat /proc/cpuinfo | grep 'physical id' | sort | uniq | wc -l)"
         echo "CPU核心及版本: $(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c)"
@@ -72,7 +69,7 @@ jobs:
         sudo -E apt-get -qq update || { echo "::error::apt-get update 失败"; exit 1; }
         echo "::endgroup::"
 
-        echo "::group::apt-get install"
+        echo "::group::apt-get install 编译依赖"
         sudo -E apt-get -qq install \
           ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
           bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk \
@@ -94,10 +91,10 @@ jobs:
     - name: 克隆源码
       working-directory: /workdir
       run: |
-        echo "::group::克隆 ImmortalWrt 源码"
+        echo "::group::克隆 ImmortalWrt 源码（分支：$REPO_BRANCH）"
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-        echo "源码克隆完成，分支：$REPO_BRANCH"
+        echo "源码克隆完成"
         echo "::endgroup::"
 
     - name: 恢复 Ccache 缓存
@@ -108,24 +105,29 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ccache-${{ env.VERSION_TAG }}-
 
-    - name: 加载 DIY 1 与更新
+    - name: 加载 feeds 并更新
       run: |
-        echo "::group::复制 feeds.conf.default"
+        echo "::group::复制自定义 feeds.conf.default"
         [ -e $FEEDS_CONF ] && cp $FEEDS_CONF openwrt/feeds.conf.default && echo "已复制自定义 feeds 配置" || echo "未找到自定义 feeds 配置，使用默认"
-        chmod +x $DIY_P1_SH
-        cd openwrt && $GITHUB_WORKSPACE/$DIY_P1_SH
         echo "::endgroup::"
 
-        echo "::group::feeds update & install"
+        echo "::group::feeds update（拉取所有 feed 源）"
+        cd openwrt
         ./scripts/feeds update -a || { echo "::error::feeds update 失败"; exit 1; }
+        echo "::endgroup::"
+
+        echo "::group::feeds install（注册所有可用包）"
         ./scripts/feeds install -a || { echo "::error::feeds install 失败"; exit 1; }
         echo "::endgroup::"
 
-    - name: 加载 DIY 2 与配置
+    - name: 加载 DIY 与配置
       run: |
-        echo "::group::复制自定义文件与配置"
-        [ -e $CUSTOM_FILES_DIR ] && cp -r $CUSTOM_FILES_DIR openwrt/files && echo "已复制自定义 files 目录" || echo "未找到自定义 files 目录"
-        [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config && echo "已复制 .config 配置文件" || echo "未找到配置文件"
+        echo "::group::复制自定义 files 目录与 .config"
+        [ -e $CUSTOM_FILES_DIR ] && cp -r $CUSTOM_FILES_DIR openwrt/files && echo "已复制自定义 files 目录" || echo "未找到自定义 files 目录，跳过"
+        [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config && echo "已复制 .config 配置文件" || echo "未找到配置文件，跳过"
+        echo "::endgroup::"
+
+        echo "::group::执行 diy-part2.sh（清理冲突包、克隆插件）"
         chmod +x $DIY_P2_SH
         cd openwrt && $GITHUB_WORKSPACE/$DIY_P2_SH
         echo "::endgroup::"
@@ -133,15 +135,15 @@ jobs:
     - name: 下载软件包
       working-directory: /workdir/openwrt
       run: |
-        echo "::group::make defconfig"
+        echo "::group::make defconfig（生成最终配置）"
         make defconfig
         echo "::endgroup::"
 
-        echo "::group::make download"
+        echo "::group::make download（并行下载所有源码包）"
         make download -j8
         echo "::endgroup::"
 
-        echo "::group::清理不完整下载包"
+        echo "::group::清理不完整下载包（小于 1KB 的文件）"
         find dl -size -1024c -exec rm -f {} \;
         echo "清理完成"
         echo "::endgroup::"
@@ -150,19 +152,18 @@ jobs:
       id: compile
       working-directory: /workdir/openwrt
       run: |
+        echo "::group::初始化 ccache（限制缓存上限 5G）"
         export PATH="/usr/lib/ccache:$PATH"
         export CCACHE_DIR="$HOME/.ccache"
-
-        echo "::group::初始化 ccache"
         ccache -M 5G && ccache -z
         echo "::endgroup::"
 
-        echo "::group::make 多线程编译"
+        echo "::group::多线程编译（-j$(nproc)）"
         make -j$(nproc) || {
           echo "::endgroup::"
           echo "::warning::多线程编译失败，切换单线程并输出详细日志..."
-          echo "::group::make 单线程编译（详细日志）"
-          make -j1 V=s || { echo "::error::单线程编译也失败了"; exit 1; }
+          echo "::group::单线程编译 V=s（详细错误日志）"
+          make -j1 V=s || { echo "::error::单线程编译也失败了，请检查上方日志"; exit 1; }
         }
         echo "::endgroup::"
 
@@ -176,7 +177,7 @@ jobs:
         cp openwrt/bin/targets/*/*/*.tar.gz /workdir/upload/
         mv openwrt/bin/targets/*/*/*.tar.gz openwrt-armvirt/
         rm -rf /workdir/openwrt
-        echo "打包准备完成"
+        echo "打包产物已就绪，openwrt 源码目录已清理"
         echo "::endgroup::"
 
     - name: 打包 N1 内核
@@ -194,7 +195,7 @@ jobs:
       id: release_info
       if: steps.compile.outputs.status == 'success'
       run: |
-        echo "::group::生成 Release 描述文件"
+        echo "::group::收集打包产物 & 生成 Release 描述文件"
         [ -d /opt/openwrt_packit/output ] && mv /opt/openwrt_packit/output/* /workdir/upload/
         DESC_FILE="/workdir/upload/release_description.txt"
         {
@@ -241,4 +242,3 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
