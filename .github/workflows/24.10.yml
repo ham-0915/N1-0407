@@ -11,7 +11,7 @@ env:
   REPO_URL:         https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH:      openwrt-24.10
   FEEDS_CONF:       N1/Immortalwrt/24.10/TL-feeds.conf.default
-  CONFIG_FILE:      N1/Immortalwrt/24.10/20260407.config
+  CONFIG_FILE:      N1/Immortalwrt/24.10/n1.config
   DIY_SH:           N1/Immortalwrt/24.10/diy-n1.sh
   CUSTOM_FILES_DIR: N1/Immortalwrt/24.10/files
   LOG_PATH:         N1/Immortalwrt/24.10/logs.txt
@@ -303,15 +303,15 @@ jobs:
     - name: 清理旧 Workflow 记录
       uses: Mattraks/delete-workflow-runs@v2
       with:
-        retain_days:       3
-        keep_minimum_runs: 5
+        retain_days:       5
+        keep_minimum_runs: 10
         token:             ${{ secrets.GITHUB_TOKEN }}
 
     - name: 清理旧版 Release
       if: env.UPLOAD_RELEASE == 'true'
       uses: dev-drprasad/delete-older-releases@master
       with:
-        keep_latest: 7
+        keep_latest: 30
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
