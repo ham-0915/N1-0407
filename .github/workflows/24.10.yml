@@ -4,19 +4,22 @@ on:
   repository_dispatch:
   workflow_dispatch:
 
+# ============================================================
+# 全局环境变量 — 所有路径、参数集中在此维护
+# ============================================================
 env:
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: openwrt-24.10
-  FEEDS_CONF: N1/Immortalwrt/24.10/TL-feeds.conf.default
-  CONFIG_FILE: N1/Immortalwrt/24.10/20260407.config
-  DIY_P2_SH: N1/Immortalwrt/24.10/diy-part2.sh
+  REPO_URL:         https://github.com/immortalwrt/immortalwrt
+  REPO_BRANCH:      openwrt-24.10
+  FEEDS_CONF:       N1/Immortalwrt/24.10/TL-feeds.conf.default
+  CONFIG_FILE:      N1/Immortalwrt/24.10/20260407.config
+  DIY_SH:           N1/Immortalwrt/24.10/diy-n1.sh
   CUSTOM_FILES_DIR: N1/Immortalwrt/24.10/files
-  LOG_PATH: N1/Immortalwrt/24.10/logs.txt
-  TZ: Asia/Shanghai
-  UPLOAD_RELEASE: 'true'
-  DEBIAN_FRONTEND: noninteractive
+  LOG_PATH:         N1/Immortalwrt/24.10/logs.txt
+  TZ:               Asia/Shanghai
+  VERSION_TAG:      '24.10'
+  UPLOAD_RELEASE:   'true'
+  DEBIAN_FRONTEND:  noninteractive
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  VERSION_TAG: '24.10'
 
 jobs:
   build:
@@ -26,47 +29,61 @@ jobs:
       contents: write
 
     steps:
-    - name: 检查Actions
+
+    # ----------------------------------------------------------
+    # 1. 检出仓库
+    # ----------------------------------------------------------
+    - name: 检出仓库
       uses: actions/checkout@v4
 
+    # ----------------------------------------------------------
+    # 2. 准备编译空间
+    # ----------------------------------------------------------
     - name: 创建编译空间挂载点
       run: |
-        echo "::group::创建挂载点"
+        echo "::group::创建挂载点 /workdir"
         sudo mkdir -p /workdir
-        sudo chown $USER:$GROUPS /workdir
-        echo "挂载点创建完成：/workdir"
+        sudo chown "$USER:$GROUPS" /workdir
+        echo "挂载点创建完成"
         echo "::endgroup::"
 
     - name: 最大化编译空间
       uses: easimon/maximize-build-space@master
       with:
-        root-reserve-mb: 10240
-        swap-size-mb: 1024
-        build-mount-path: /workdir
-        overprovision-lvm: 'true'
-        remove-dotnet: 'true'
-        remove-android: 'true'
-        remove-haskell: 'true'
-        remove-codeql: 'true'
+        root-reserve-mb:    10240
+        swap-size-mb:       1024
+        build-mount-path:   /workdir
+        overprovision-lvm:  'true'
+        remove-dotnet:      'true'
+        remove-android:     'true'
+        remove-haskell:     'true'
+        remove-codeql:      'true'
         remove-docker-images: 'true'
 
+    # ----------------------------------------------------------
+    # 3. 打印服务器信息（便于排查性能瓶颈）
+    # ----------------------------------------------------------
     - name: 检查服务器配置
       run: |
         echo "::group::服务器硬件信息"
-        echo "警告⚠ 分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
+        echo "⚠ 插件过多时请注意 CPU 性能限制"
         echo "--- CPU ---"
-        echo "CPU物理数量: $(cat /proc/cpuinfo | grep 'physical id' | sort | uniq | wc -l)"
-        echo "CPU核心及版本: $(cat /proc/cpuinfo | grep name | cut -f2 -d: | uniq -c)"
+        grep -c ^processor /proc/cpuinfo | xargs -I{} echo "逻辑核心数: {}"
+        grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2 | xargs echo "型号:"
         echo "--- 内存 ---"
-        sudo lshw -short -C memory | grep GiB
+        free -h | grep Mem
         echo "--- 硬盘 ---"
         df -Th
         echo "::endgroup::"
 
+    # ----------------------------------------------------------
+    # 4. 初始化编译环境
+    # ----------------------------------------------------------
     - name: 初始化编译环境
       run: |
         echo "::group::apt-get update"
-        sudo -E apt-get -qq update || { echo "::error::apt-get update 失败"; exit 1; }
+        sudo -E apt-get -qq update \
+          || { echo "::error::apt-get update 失败"; exit 1; }
         echo "::endgroup::"
 
         echo "::group::apt-get install 编译依赖"
@@ -88,115 +105,167 @@ jobs:
         echo "时区已设置为：$TZ"
         echo "::endgroup::"
 
-    - name: 克隆源码
+    # ----------------------------------------------------------
+    # 5. 克隆源码
+    # ----------------------------------------------------------
+    - name: 克隆 ImmortalWrt 源码
       working-directory: /workdir
       run: |
-        echo "::group::克隆 ImmortalWrt 源码（分支：$REPO_BRANCH）"
-        git clone $REPO_URL -b $REPO_BRANCH openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
+        echo "::group::git clone（分支：$REPO_BRANCH）"
+        git clone --depth=1 "$REPO_URL" -b "$REPO_BRANCH" openwrt
+        ln -sf /workdir/openwrt "$GITHUB_WORKSPACE/openwrt"
         echo "源码克隆完成"
         echo "::endgroup::"
 
+    # ----------------------------------------------------------
+    # 6. 恢复 Ccache 缓存（加速二次编译）
+    # ----------------------------------------------------------
     - name: 恢复 Ccache 缓存
       uses: actions/cache@v5
       with:
         path: ~/.ccache
-        key: ${{ runner.os }}-ccache-${{ env.VERSION_TAG }}-${{ hashFiles(env.CONFIG_FILE) }}
-        restore-keys: |
-          ${{ runner.os }}-ccache-${{ env.VERSION_TAG }}-
+        key:          ${{ runner.os }}-ccache-${{ env.VERSION_TAG }}-${{ hashFiles(env.CONFIG_FILE) }}
+        restore-keys: ${{ runner.os }}-ccache-${{ env.VERSION_TAG }}-
 
+    # ----------------------------------------------------------
+    # 7. 加载 feeds
+    # ----------------------------------------------------------
     - name: 加载 feeds 并更新
       run: |
         echo "::group::复制自定义 feeds.conf.default"
-        [ -e $FEEDS_CONF ] && cp $FEEDS_CONF openwrt/feeds.conf.default && echo "已复制自定义 feeds 配置" || echo "未找到自定义 feeds 配置，使用默认"
+        if [ -e "$FEEDS_CONF" ]; then
+          cp "$FEEDS_CONF" openwrt/feeds.conf.default
+          echo "已复制：$FEEDS_CONF"
+        else
+          echo "未找到自定义 feeds 配置，使用源码默认值"
+        fi
         echo "::endgroup::"
 
         echo "::group::feeds update（拉取所有 feed 源）"
         cd openwrt
-        ./scripts/feeds update -a || { echo "::error::feeds update 失败"; exit 1; }
+        ./scripts/feeds update -a \
+          || { echo "::error::feeds update 失败"; exit 1; }
         echo "::endgroup::"
 
         echo "::group::feeds install（注册所有可用包）"
-        ./scripts/feeds install -a || { echo "::error::feeds install 失败"; exit 1; }
+        ./scripts/feeds install -a \
+          || { echo "::error::feeds install 失败"; exit 1; }
         echo "::endgroup::"
 
-    - name: 加载 DIY 与配置
+    # ----------------------------------------------------------
+    # 8. 应用 DIY 脚本与自定义配置
+    # ----------------------------------------------------------
+    - name: 加载 DIY 与自定义配置
       run: |
-        echo "::group::复制自定义 files 目录与 .config"
-        [ -e $CUSTOM_FILES_DIR ] && cp -r $CUSTOM_FILES_DIR openwrt/files && echo "已复制自定义 files 目录" || echo "未找到自定义 files 目录，跳过"
-        [ -e $CONFIG_FILE ] && cp $CONFIG_FILE openwrt/.config && echo "已复制 .config 配置文件" || echo "未找到配置文件，跳过"
+        echo "::group::复制自定义 files 目录"
+        if [ -e "$CUSTOM_FILES_DIR" ]; then
+          cp -r "$CUSTOM_FILES_DIR" openwrt/files
+          echo "已复制：$CUSTOM_FILES_DIR"
+        else
+          echo "未找到 files 目录，跳过"
+        fi
         echo "::endgroup::"
 
-        echo "::group::执行 diy-part2.sh（清理冲突包、克隆插件）"
-        chmod +x $DIY_P2_SH
-        cd openwrt && $GITHUB_WORKSPACE/$DIY_P2_SH
+        echo "::group::复制 .config 配置文件"
+        if [ -e "$CONFIG_FILE" ]; then
+          cp "$CONFIG_FILE" openwrt/.config
+          echo "已复制：$CONFIG_FILE"
+        else
+          echo "未找到 .config，跳过"
+        fi
         echo "::endgroup::"
 
+        echo "::group::执行 $DIY_SH（清理冲突包、升级 Golang、克隆插件）"
+        chmod +x "$DIY_SH"
+        cd openwrt && "$GITHUB_WORKSPACE/$DIY_SH"
+        echo "::endgroup::"
+
+    # ----------------------------------------------------------
+    # 9. 下载软件包
+    # ----------------------------------------------------------
     - name: 下载软件包
       working-directory: /workdir/openwrt
       run: |
-        echo "::group::make defconfig（生成最终配置）"
+        echo "::group::make defconfig（生成最终 .config）"
         make defconfig
         echo "::endgroup::"
 
-        echo "::group::make download（并行下载所有源码包）"
+        echo "::group::make download -j8（并行下载所有源码包）"
         make download -j8
         echo "::endgroup::"
 
-        echo "::group::清理不完整下载包（小于 1KB 的文件）"
+        echo "::group::清理不完整下载包（小于 1KB）"
         find dl -size -1024c -exec rm -f {} \;
         echo "清理完成"
         echo "::endgroup::"
 
+    # ----------------------------------------------------------
+    # 10. 编译固件（多线程优先，失败自动降级单线程）
+    # ----------------------------------------------------------
     - name: 编译固件
       id: compile
       working-directory: /workdir/openwrt
       run: |
-        echo "::group::初始化 ccache（限制缓存上限 5G）"
         export PATH="/usr/lib/ccache:$PATH"
         export CCACHE_DIR="$HOME/.ccache"
+
+        echo "::group::初始化 ccache（上限 5G）"
         ccache -M 5G && ccache -z
         echo "::endgroup::"
 
-        echo "::group::多线程编译（-j$(nproc)）"
-        make -j$(nproc) || {
+        echo "::group::多线程编译 -j$(nproc)"
+        if make -j$(nproc); then
+          echo "多线程编译成功"
+        else
           echo "::endgroup::"
-          echo "::warning::多线程编译失败，切换单线程并输出详细日志..."
+          echo "::warning::多线程失败，降级单线程以输出详细日志..."
           echo "::group::单线程编译 V=s（详细错误日志）"
-          make -j1 V=s || { echo "::error::单线程编译也失败了，请检查上方日志"; exit 1; }
-        }
+          make -j1 V=s \
+            || { echo "::error::单线程编译也失败，请检查上方日志"; exit 1; }
+        fi
         echo "::endgroup::"
 
-        echo "status=success" >> $GITHUB_OUTPUT
+        echo "status=success" >> "$GITHUB_OUTPUT"
 
+    # ----------------------------------------------------------
+    # 11. 整理编译产物，准备打包
+    # ----------------------------------------------------------
     - name: 准备打包
       if: steps.compile.outputs.status == 'success'
       run: |
         echo "::group::整理编译产物"
         mkdir -p /workdir/upload openwrt-armvirt
-        cp openwrt/bin/targets/*/*/*.tar.gz /workdir/upload/
-        mv openwrt/bin/targets/*/*/*.tar.gz openwrt-armvirt/
+        cp  openwrt/bin/targets/*/*/*.tar.gz /workdir/upload/
+        mv  openwrt/bin/targets/*/*/*.tar.gz openwrt-armvirt/
         rm -rf /workdir/openwrt
-        echo "打包产物已就绪，openwrt 源码目录已清理"
+        echo "产物已整理，源码目录已清理"
         echo "::endgroup::"
 
-    - name: 打包 N1 内核
+    # ----------------------------------------------------------
+    # 12. 打包 N1 固件
+    # ----------------------------------------------------------
+    - name: 打包 N1 固件
       if: steps.compile.outputs.status == 'success'
       uses: unifreq/openwrt_packit@master
       env:
-        WHOAMI: ham
-        OPENWRT_ARMVIRT: openwrt-armvirt/*.tar.gz
-        PACKAGE_SOC: s905d
-        KERNEL_AUTO_LATEST: true
-        KERNEL_REPO_URL: ophub/kernel
+        WHOAMI:              ham
+        OPENWRT_ARMVIRT:     openwrt-armvirt/*.tar.gz
+        PACKAGE_SOC:         s905d
+        KERNEL_AUTO_LATEST:  true
+        KERNEL_REPO_URL:     ophub/kernel
         KERNEL_VERSION_NAME: 6.12.y
 
+    # ----------------------------------------------------------
+    # 13. 生成 Release 描述并上传
+    # ----------------------------------------------------------
     - name: 整理发布信息
       id: release_info
       if: steps.compile.outputs.status == 'success'
       run: |
-        echo "::group::收集打包产物 & 生成 Release 描述文件"
-        [ -d /opt/openwrt_packit/output ] && mv /opt/openwrt_packit/output/* /workdir/upload/
+        echo "::group::收集产物 & 生成 Release 描述"
+        [ -d /opt/openwrt_packit/output ] \
+          && mv /opt/openwrt_packit/output/* /workdir/upload/
+
         DESC_FILE="/workdir/upload/release_description.txt"
         {
           echo "- **编译源码**：https://github.com/immortalwrt/immortalwrt/tree/openwrt-24.10"
@@ -205,34 +274,38 @@ jobs:
           echo "- **登录密码**：password"
           echo ""
           echo "### 更新日志"
-          if [ -f "${{ env.LOG_PATH }}" ]; then
-            cat "${{ env.LOG_PATH }}"
+          if [ -f "$LOG_PATH" ]; then
+            cat "$LOG_PATH"
           else
             echo "- 常规更新发布"
           fi
-        } > $DESC_FILE
-        echo "release_tag=N1-24.10_$(date +%Y%m%d)" >> $GITHUB_OUTPUT
-        echo "release_date=$(date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
-        echo "描述文件生成完成：$DESC_FILE"
+        } > "$DESC_FILE"
+
+        echo "release_tag=N1-24.10_$(date +%Y%m%d)"    >> "$GITHUB_OUTPUT"
+        echo "release_date=$(date '+%Y-%m-%d %H:%M')"  >> "$GITHUB_OUTPUT"
+        echo "描述文件已生成：$DESC_FILE"
         echo "::endgroup::"
 
-    - name: 上传发布
+    - name: 上传 Release
       if: steps.compile.outputs.status == 'success'
       uses: ncipollo/release-action@v1
       with:
-        name: "OpenWrt-N1 ${{ steps.release_info.outputs.release_date }}"
-        tag: "${{ steps.release_info.outputs.release_tag }}"
-        artifacts: /workdir/upload/openwrt*
+        name:         "OpenWrt-N1 ${{ steps.release_info.outputs.release_date }}"
+        tag:          "${{ steps.release_info.outputs.release_tag }}"
+        artifacts:    /workdir/upload/openwrt*
         allowUpdates: true
-        token: ${{ secrets.GITHUB_TOKEN }}
-        bodyFile: /workdir/upload/release_description.txt
+        token:        ${{ secrets.GITHUB_TOKEN }}
+        bodyFile:     /workdir/upload/release_description.txt
 
-    - name: 清理运行记录
+    # ----------------------------------------------------------
+    # 14. 清理旧记录（保持 Actions 和 Release 整洁）
+    # ----------------------------------------------------------
+    - name: 清理旧 Workflow 记录
       uses: Mattraks/delete-workflow-runs@v2
       with:
-        retain_days: 3
+        retain_days:       3
         keep_minimum_runs: 5
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token:             ${{ secrets.GITHUB_TOKEN }}
 
     - name: 清理旧版 Release
       if: env.UPLOAD_RELEASE == 'true'
@@ -242,3 +315,4 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
