@@ -90,34 +90,9 @@ sed -i '/mjpg-streamer/d;/onionshare/d' .config 2>/dev/null || true
 # python-ubus 路径不固定，用 find 定位后删除
 find feeds/packages -type d -name "*python*ubus*" -exec rm -rf {} + 2>/dev/null || true
 
-# ============================================================
-# 4. 清理产生 feeds install WARNING 的 N1 无关包
-#
-#   包名              │ 缺失依赖              │ 原因
-#   ──────────────────┼───────────────────────┼──────────────────────────
-#   audit             │ libev                 │ Linux 审计框架，N1 用不到
-#   autocore          │ lm-sensors            │ x86 专用温度库，armv8 无
-#   autosamba         │ luci-app-samba4/wsdd2 │ 与手动加的 samba4 功能重叠
-#   kexec-tools       │ liblzma               │ 内核热重启，N1 固件无需
-#   lldpd             │ libnetsnmp            │ SNMP 扩展，家用不需要
-#   pcat-manager      │ glib2/libgpiod        │ PCAT 专有硬件，与 N1 无关
-#   policycoreutils   │ libpam                │ SELinux 工具，OpenWrt 未启用
-#
-#   注：busybox 的 libpam/libtirpc WARNING 来自 Makefile 可选项，
-#       无法通过删包消除，不影响编译，忽略即可。
-# ============================================================
-log "清理产生 WARNING 的 N1 无关包"
-rm -rf \
-  feeds/packages/boot/kexec-tools            \
-  feeds/packages/emortal/autocore            \
-  feeds/packages/emortal/autosamba           \
-  feeds/packages/network/services/lldpd      \
-  feeds/packages/utils/audit                 \
-  feeds/packages/utils/pcat-manager          \
-  feeds/packages/utils/policycoreutils
 
 # ============================================================
-# 5. 克隆 Passwall 2 及其代理核心依赖
+# 4. 克隆 Passwall 2 及其代理核心依赖
 #    passwall-packages 提供：xray-core / sing-box / hysteria2 /
 #                            naiveproxy / tuic-client 等所有核心
 # ============================================================
@@ -131,7 +106,7 @@ git clone --depth=1 \
   package/passwall2
 
 # ============================================================
-# 6. 克隆第三方插件
+# 5. 克隆第三方插件
 # ============================================================
 log "克隆第三方插件"
 
