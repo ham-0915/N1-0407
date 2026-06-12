@@ -31,7 +31,7 @@ jobs:
     - name: 上传到 Release
       uses: ncipollo/release-action@v1
       with:
-        name: "N1-测试打包-${{ env.PACKAGED_OUTPUTDATE }}"
+        name: "N1-测试打包-24.10-${{ env.PACKAGED_OUTPUTDATE }}"
         tag: "test-pack-${{ env.PACKAGED_OUTPUTDATE }}"
         artifacts: "${{ env.PACKAGED_OUTPUTPATH }}/*"
         allowUpdates: true
