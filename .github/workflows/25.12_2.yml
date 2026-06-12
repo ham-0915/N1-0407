@@ -1,4 +1,4 @@
-name: 25.12
+name: 25.12_2
 
 on:
   repository_dispatch:
@@ -210,7 +210,6 @@ jobs:
         echo "产物已整理，源码目录已清理"
         echo "::endgroup::"
 
-    # ─── 关键修改：去掉 KERNEL_REPO_URL，使用默认内核源（与早期成功一致）───
     - name: 打包 N1 固件
       if: steps.compile.outputs.status == 'success'
       uses: unifreq/openwrt_packit@master
@@ -245,7 +244,7 @@ jobs:
           fi
         } > "$DESC_FILE"
 
-        echo "release_tag=N1-25.12_$(date +%Y%m%d)"    >> "$GITHUB_OUTPUT"
+        echo "release_tag=N1-25.122_$(date +%Y%m%d)"    >> "$GITHUB_OUTPUT"
         echo "release_date=$(date '+%Y-%m-%d %H:%M')"  >> "$GITHUB_OUTPUT"
         echo "描述文件已生成：$DESC_FILE"
         echo "::endgroup::"
