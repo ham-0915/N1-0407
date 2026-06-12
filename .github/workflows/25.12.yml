@@ -235,12 +235,8 @@ jobs:
       run: |
         echo "::group::整理编译产物"
         mkdir -p /workdir/upload openwrt-armvirt
-        echo "=== 实际生成的 tar.gz 文件 ==="
-        find openwrt/bin/targets/ -name "*rootfs.tar.gz" -ls
-        find openwrt/bin/targets/ -name "*rootfs.tar.gz" -exec cp {} /workdir/upload/ \;
-        find openwrt/bin/targets/ -name "*rootfs.tar.gz" -exec mv {} openwrt-armvirt/ \;
-        echo "=== openwrt-armvirt 目录内容 ==="
-        ls -lh openwrt-armvirt/
+        cp openwrt/bin/targets/*/*/*-generic-rootfs.tar.gz /workdir/upload/
+        mv openwrt/bin/targets/*/*/*-generic-rootfs.tar.gz openwrt-armvirt/
         rm -rf /workdir/openwrt
         echo "产物已整理，源码目录已清理"
         echo "::endgroup::"
@@ -253,7 +249,7 @@ jobs:
       uses: unifreq/openwrt_packit@master
       env:
         WHOAMI:              ham
-        OPENWRT_ARMVIRT:     openwrt-armvirt/*.tar.gz
+        OPENWRT_ARMVIRT:     openwrt-armvirt/*-generic-rootfs.tar.gz
         PACKAGE_SOC:         s905d
         KERNEL_AUTO_LATEST:  true
         KERNEL_REPO_URL:     ophub/kernel
