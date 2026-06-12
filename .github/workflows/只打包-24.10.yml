@@ -38,7 +38,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         body: |
           ### 测试打包
-          - **rootfs 来源**：ham-0915/N1-0407
+          - **rootfs 来源**：ham-0915/N1-0407/24.10
           - **内核来源**：ophub/kernel（unifreq flippy 内核）
           - **内核版本**：6.y.y 最新
           - **网关地址**：192.168.123.2
