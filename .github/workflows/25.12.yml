@@ -228,17 +228,17 @@ jobs:
         echo "status=success" >> "$GITHUB_OUTPUT"
 
     # ----------------------------------------------------------
-    # 11. 整理编译产物，准备打包
+    # 11. 整理编译产物，备份到 upload
     # ----------------------------------------------------------
     - name: 准备打包
       if: steps.compile.outputs.status == 'success'
       run: |
         echo "::group::整理编译产物"
-        mkdir -p /workdir/upload openwrt-armvirt
-        cp  openwrt/bin/targets/*/*/*.tar.gz /workdir/upload/
-        mv  openwrt/bin/targets/*/*/*.tar.gz openwrt-armvirt/
-        rm -rf /workdir/openwrt
-        echo "产物已整理，源码目录已清理"
+        mkdir -p /workdir/upload
+        echo "=== 编译输出的 tar.gz 文件 ==="
+        find openwrt/bin/targets/ -name "*.tar.gz" -ls
+        cp openwrt/bin/targets/*/*/*.tar.gz /workdir/upload/
+        echo "产物已备份至 /workdir/upload"
         echo "::endgroup::"
 
     # ----------------------------------------------------------
@@ -249,7 +249,7 @@ jobs:
       uses: unifreq/openwrt_packit@master
       env:
         WHOAMI:              ham
-        OPENWRT_ARMVIRT:     openwrt-armvirt/*.tar.gz
+        OPENWRT_ARMSR:       openwrt/bin/targets/*/*/*.tar.gz
         PACKAGE_SOC:         s905d
         KERNEL_AUTO_LATEST:  true
         KERNEL_REPO_URL:     ophub/kernel
@@ -315,4 +315,3 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
