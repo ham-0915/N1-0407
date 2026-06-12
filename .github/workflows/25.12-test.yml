@@ -27,7 +27,7 @@ jobs:
     - name: 模拟编译产物（下载已有 rootfs）
       id: compile
       run: |
-        mkdir -p openwrt-armvirt /workdir/upload
+        mkdir -p openwrt-armvirt ./workdir/upload
         wget -q --show-progress -O openwrt-armvirt/openwrt-armsr-armv8-generic-rootfs.tar.gz \
           https://github.com/ham-0915/N1-0407/releases/download/N1-25.12_20260601/openwrt-armsr-armv8-generic-rootfs.tar.gz
         echo "=== openwrt-armvirt 目录内容 ==="
@@ -49,9 +49,8 @@ jobs:
       id: release_info
       if: steps.compile.outputs.status == 'success'
       run: |
-        mkdir -p /workdir/upload
-        [ -d /opt/openwrt_packit/output ] \
-          && mv /opt/openwrt_packit/output/* /workdir/upload/
+        mkdir -p ./workdir/upload
+        [ -d /opt/openwrt_packit/output ] && mv /opt/openwrt_packit/output/* ./workdir/upload/
         echo "release_tag=N1-25.12-test_$(date +%Y%m%d%H%M)" >> "$GITHUB_OUTPUT"
         echo "release_date=$(date '+%Y-%m-%d %H:%M')"         >> "$GITHUB_OUTPUT"
 
@@ -61,6 +60,6 @@ jobs:
       with:
         name:         "OpenWrt-N1 TEST ${{ steps.release_info.outputs.release_date }}"
         tag:          "${{ steps.release_info.outputs.release_tag }}"
-        artifacts:    /workdir/upload/openwrt*
+        artifacts:    ./workdir/upload/openwrt*
         allowUpdates: true
         token:        ${{ secrets.GITHUB_TOKEN }}
