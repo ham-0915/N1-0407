@@ -32,7 +32,7 @@ jobs:
       uses: ncipollo/release-action@v1
       with:
         name: "N1-测试打包-24.10-${{ env.PACKAGED_OUTPUTDATE }}"
-        tag: "test-pack-${{ env.PACKAGED_OUTPUTDATE }}"
+        tag: "test-24.10-${{ env.PACKAGED_OUTPUTDATE }}"
         artifacts: "${{ env.PACKAGED_OUTPUTPATH }}/*"
         allowUpdates: true
         token: ${{ secrets.GITHUB_TOKEN }}
