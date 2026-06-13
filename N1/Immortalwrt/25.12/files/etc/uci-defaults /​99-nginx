@@ -12,3 +12,4 @@ uci add_list nginx._lan.include='conf.d/*.locations'
 uci set nginx._lan.access_log='off; # logd openwrt'
 uci commit nginx
 exit 0
+
