@@ -140,4 +140,26 @@ git clone --depth=1 \
 # git clone --depth=1 \
 #   https://github.com/sirpdboy/luci-app-timecontrol package/luci-app-timecontrol
 
+
+# ============================================================
+# 6. Nginx Quickfile 修复（解决证书错误）
+# ============================================================
+log "注入 Nginx Quickfile 修复"
+mkdir -p package/base-files/files/etc/uci-defaults
+cat > package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile << 'EOF'
+#!/bin/sh
+uci set nginx.global.uci_enable='true'
+uci del nginx._lan; uci del nginx._redirect2ssl
+uci add nginx server; uci rename nginx.@server[0]='_lan'
+uci set nginx._lan.server_name='_lan'
+uci add_list nginx._lan.listen='80 default_server'
+uci add_list nginx._lan.listen='[::]:80 default_server'
+uci add_list nginx._lan.include='conf.d/*.locations'
+uci set nginx._lan.access_log='off'
+uci commit nginx
+/etc/init.d/nginx restart
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile
+
 log "diy-n1.sh 全部执行完毕 ✓"
