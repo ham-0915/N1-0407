@@ -142,15 +142,21 @@ git clone --depth=1 \
 
 
 # ============================================================
-# 6. Nginx Quickfile 修复（解决证书错误）
+# 6. 动态生成 Nginx 修复脚本，彻底解决 Quickfile 证书的错误
 # ============================================================
-log "注入 Nginx Quickfile 修复"
+log "注入 Quickfile Nginx 专属修复补丁"
+
+# 创建标准的 uci-defaults 目录
 mkdir -p package/base-files/files/etc/uci-defaults
+
+# 动态写入 Nginx 优化脚本
 cat > package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile << 'EOF'
 #!/bin/sh
 uci set nginx.global.uci_enable='true'
-uci del nginx._lan; uci del nginx._redirect2ssl
-uci add nginx server; uci rename nginx.@server[0]='_lan'
+uci del nginx._lan
+uci del nginx._redirect2ssl
+uci add nginx server
+uci rename nginx.@server[0]='_lan'
 uci set nginx._lan.server_name='_lan'
 uci add_list nginx._lan.listen='80 default_server'
 uci add_list nginx._lan.listen='[::]:80 default_server'
@@ -160,6 +166,8 @@ uci commit nginx
 /etc/init.d/nginx restart
 exit 0
 EOF
+
+# 赋予该脚本可执行权限，确保开机能够顺利触发
 chmod +x package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile
 
 log "diy-n1.sh 全部执行完毕 ✓"
