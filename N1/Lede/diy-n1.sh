@@ -7,10 +7,25 @@
 set -euo pipefail
 
 # ------------------------------------------------------------
+# 0. 内核替换（按需，默认不启用）
+# ------------------------------------------------------------
+#sed -i 's/KERNEL_PATCHVER:=5.15/KERNEL_PATCHVER:=5.4/g' ./target/linux/x86/Makefile
+
+# ------------------------------------------------------------
 # 1. 基础环境设置 (IP: 192.168.123.2 | 主机名: OpenWrt)
 # ------------------------------------------------------------
 sed -i 's/192.168.1.1/192.168.123.2/g' package/base-files/files/bin/config_generate
 sed -i 's/LEDE/OpenWrt/g' package/base-files/files/bin/config_generate
+
+# ------------------------------------------------------------
+# 1.5 升级 Golang（关键稳健性修复）
+#     xray-core / mosdns-v5 / hysteria / sing-box / nikki(mihomo) 等均为 Go 编写，
+#     lede 官方 feeds 自带的 golang 版本经常跟不上这些包所需的最低 Go 版本，
+#     社区公认解法是用 sbwml 维护的预编译 bootstrap 版本替换，避免因 Go 版本过低导致编译中断
+# ------------------------------------------------------------
+rm -rf feeds/packages/lang/golang
+git clone --depth=1 -b 26.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang \
+  || { echo "::error::克隆 packages_lang_golang 失败"; exit 1; }
 
 # ------------------------------------------------------------
 # 2. 彻底清理 feeds 冲突 (防止 PassWall, Nikki, TurboACC 等重复报错)
@@ -49,15 +64,14 @@ git clone https://github.com/sbwml/luci-app-openlist2 --depth=1 package/openlist
 git clone https://github.com/ophub/luci-app-amlogic --depth=1 package/amlogic \
   || { echo "::error::克隆 luci-app-amlogic 失败"; exit 1; }
 
-# 校验 passwall 关键依赖是否齐全（Hysteria/tuic-client/NaiveProxy/shadow-tls 对应 .config 里的 INCLUDE 选项）
-echo "::group::校验 passwall-packages 关键依赖"
-for dep in xray-core hysteria tuic-client naiveproxy shadow-tls chinadns-ng ipt2socks; do
-  if [ ! -d "package/passwall-packages/$dep" ]; then
-    echo "::error::passwall-packages 缺少依赖目录: $dep，请检查上游仓库结构是否变动"
-    exit 1
-  fi
-done
-echo "passwall 依赖校验通过"
+# 简单确认 passwall-packages 克隆成功且非空即可（具体依赖是否齐全交给
+# feeds install / make defconfig 自身的依赖解析去判断，避免手动猜测目录名导致误报）
+echo "::group::确认 passwall-packages 已克隆"
+if [ -z "$(ls -A package/passwall-packages 2>/dev/null)" ]; then
+  echo "::error::package/passwall-packages 目录为空，克隆可能未成功"
+  exit 1
+fi
+echo "passwall-packages 目录非空，克隆确认成功"
 echo "::endgroup::"
 
 # ------------------------------------------------------------
