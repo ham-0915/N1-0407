@@ -53,7 +53,7 @@ git clone --depth=1 https://github.com/sbwml/luci-app-openlist2 package/openlist
 git clone --depth=1 https://github.com/sbwml/luci-app-quickfile package/luci-app-quickfile
 git clone --depth=1 https://github.com/gdy666/luci-app-lucky package/lucky
 git clone --depth=1 https://github.com/timsaya/luci-app-bandix package/luci-app-bandix
-
+git clone --depth=1 https://github.com/timsaya/openwrt-bandix package/openwrt-bandix
 # ------------------------------------------------------------
 # 4. 修复系统库依赖 (防止 armsr 架构下的编译中断)
 # ------------------------------------------------------------
