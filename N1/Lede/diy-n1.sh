@@ -42,37 +42,17 @@ rm -rf feeds/luci/applications/luci-app-upnp
 
 # ------------------------------------------------------------
 # 3. 插件仓库拉取
-#    去除：openwrt-passwall2、helloworld(ssr-plus)
-#    保留：passwall(主) + passwall-packages（提供内核依赖）
 # ------------------------------------------------------------
-git clone https://github.com/Openwrt-Passwall/openwrt-passwall package/passwall \
-  || { echo "::error::克隆 openwrt-passwall 失败"; exit 1; }
-git clone https://github.com/Openwrt-Passwall/openwrt-passwall-packages package/passwall-packages \
-  || { echo "::error::克隆 openwrt-passwall-packages 失败"; exit 1; }
-
-# 常用核心插件 (Nikki, OpenClash, Lucky, MosDNS, OpenList2)
-git clone https://github.com/nikkinikki-org/OpenWrt-nikki --depth=1 package/nikki \
-  || { echo "::error::克隆 OpenWrt-nikki 失败"; exit 1; }
-git clone https://github.com/vernesong/OpenClash --depth=1 package/openclash \
-  || { echo "::error::克隆 OpenClash 失败"; exit 1; }
-git clone https://github.com/gdy666/luci-app-lucky.git --depth=1 package/lucky \
-  || { echo "::error::克隆 luci-app-lucky 失败"; exit 1; }
-git clone https://github.com/sbwml/luci-app-mosdns -b v5 --depth=1 package/mosdns \
-  || { echo "::error::克隆 luci-app-mosdns 失败"; exit 1; }
-git clone https://github.com/sbwml/luci-app-openlist2 --depth=1 package/openlist2 \
-  || { echo "::error::克隆 luci-app-openlist2 失败"; exit 1; }
-git clone https://github.com/ophub/luci-app-amlogic --depth=1 package/amlogic \
-  || { echo "::error::克隆 luci-app-amlogic 失败"; exit 1; }
-
-# 简单确认 passwall-packages 克隆成功且非空即可（具体依赖是否齐全交给
-# feeds install / make defconfig 自身的依赖解析去判断，避免手动猜测目录名导致误报）
-echo "::group::确认 passwall-packages 已克隆"
-if [ -z "$(ls -A package/passwall-packages 2>/dev/null)" ]; then
-  echo "::error::package/passwall-packages 目录为空，克隆可能未成功"
-  exit 1
-fi
-echo "passwall-packages 目录非空，克隆确认成功"
-echo "::endgroup::"
+git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
+git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2
+git clone --depth=1 https://github.com/ophub/luci-app-amlogic package/amlogic
+git clone --depth=1 https://github.com/vernesong/OpenClash package/openclash
+git clone --depth=1 https://github.com/nikkinikki-org/OpenWrt-nikki package/nikki
+git clone --depth=1 -b v5 https://github.com/sbwml/luci-app-mosdns package/mosdns
+git clone --depth=1 https://github.com/sbwml/luci-app-openlist2 package/openlist2
+git clone --depth=1 https://github.com/sbwml/luci-app-quickfile package/luci-app-quickfile
+git clone --depth=1 https://github.com/gdy666/luci-app-lucky package/lucky
+git clone --depth=1 https://github.com/timsaya/luci-app-bandix package/luci-app-bandix
 
 # ------------------------------------------------------------
 # 4. 修复系统库依赖 (防止 armsr 架构下的编译中断)
@@ -82,8 +62,8 @@ sed -i 's/REENTRANT -D_GNU_SOURCE/LARGEFILE64_SOURCE/g' feeds/packages/lang/perl
 # ------------------------------------------------------------
 # 5. 修正俩处错误的翻译
 # ------------------------------------------------------------
-sed -i 's/<%:Up%>/<%:Move up%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
-sed -i 's/<%:Down%>/<%:Move down%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
+#sed -i 's/<%:Up%>/<%:Move up%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
+#sed -i 's/<%:Down%>/<%:Move down%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
 
 # ------------------------------------------------------------
 # 6. 注入 Nginx Quickfile 修复
