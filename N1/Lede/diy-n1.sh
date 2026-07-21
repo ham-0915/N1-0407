@@ -7,11 +7,6 @@
 set -euo pipefail
 
 # ------------------------------------------------------------
-# 0. 内核替换（按需，默认不启用）
-# ------------------------------------------------------------
-#sed -i 's/KERNEL_PATCHVER:=5.15/KERNEL_PATCHVER:=5.4/g' ./target/linux/x86/Makefile
-
-# ------------------------------------------------------------
 # 1. 基础环境设置 (IP: 192.168.123.2 | 主机名: OpenWrt)
 # ------------------------------------------------------------
 sed -i 's/192.168.1.1/192.168.123.2/g' package/base-files/files/bin/config_generate
@@ -58,7 +53,7 @@ git clone --depth=1 https://github.com/timsaya/openwrt-bandix package/openwrt-ba
 # ------------------------------------------------------------
 # 4. 修复系统库依赖 (防止 armsr 架构下的编译中断)
 # ------------------------------------------------------------
-sed -i 's/REENTRANT -D_GNU_SOURCE/LARGEFILE64_SOURCE/g' feeds/packages/lang/perl/Makefile
+#sed -i 's/REENTRANT -D_GNU_SOURCE/LARGEFILE64_SOURCE/g' feeds/packages/lang/perl/Makefile
 
 # ------------------------------------------------------------
 # 5. 修正俩处错误的翻译
