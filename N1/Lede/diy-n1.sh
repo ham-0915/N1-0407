@@ -31,7 +31,7 @@ git clone --depth=1 -b 26.x https://github.com/sbwml/packages_lang_golang feeds/
 # 2. 彻底清理 feeds 冲突 (防止 PassWall, Nikki, TurboACC 等重复报错)
 #    注：已去除 passwall2 / ssr-plus(helloworld) 相关内核目录
 # ------------------------------------------------------------
-rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls,nikki,openlist}
+rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls,nikki,openlist,lucky}
 rm -rf feeds/luci/applications/luci-app-{passwall,mosdns,lucky,nikki,openclash,openlist*}
 rm -rf package/feeds/telephony
 # 删除不需要的默认 LuCI 插件 (动态DNS、带宽监控、网络唤醒、UPnP、KSM服务器)
