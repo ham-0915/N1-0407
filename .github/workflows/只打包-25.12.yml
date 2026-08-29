@@ -21,7 +21,7 @@ jobs:
       uses: unifreq/openwrt_packit@master
       env:
         WHOAMI: ham
-        OPENWRT_ARMVIRT: https://github.com/ham-0915/N1-0407/releases/download/N1-25.12_20260612/openwrt-armsr-armv8-generic-rootfs.tar.gz
+        OPENWRT_ARMVIRT: https://github.com/ham-0915/N1-0407/releases/download/lede-24.10_20260829/openwrt-armsr-armv8-generic-rootfs.tar.gz
         PACKAGE_SOC: s905d
         KERNEL_AUTO_LATEST: true
         KERNEL_REPO_URL: ophub/kernel
