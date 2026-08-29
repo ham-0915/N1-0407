@@ -1,14 +1,15 @@
 #!/bin/bash
-#
 # File name: diy-n1.sh
-# Description: OpenWrt/Lede DIY script (feeds update 之前的内核替换 + feeds install 之后的定制)
-# 说明：已合并原 diy-part1.sh + diy-part2.sh，并去除 passwall2、ssr-plus(helloworld) 相关插件
-
 set -euo pipefail
+# 定义 log 函数
+log() {
+    echo -e "\e[32m[$(date +'%Y-%m-%d %H:%M:%S')] $1\e[0m"
+}
 
 # ------------------------------------------------------------
 # 1. 基础环境设置 (IP: 192.168.123.2 | 主机名: OpenWrt)
 # ------------------------------------------------------------
+log "设置默认 IP 与主机名"
 sed -i 's/192.168.1.1/192.168.123.2/g' package/base-files/files/bin/config_generate
 sed -i 's/LEDE/OpenWrt/g' package/base-files/files/bin/config_generate
 
@@ -27,6 +28,7 @@ git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 # 2. 彻底清理 feeds 冲突 (防止 PassWall, Nikki, TurboACC 等重复报错)
 #    注：已去除 passwall2 / ssr-plus(helloworld) 相关内核目录
 # ------------------------------------------------------------
+log "清理冲突包"
 rm -rf feeds/packages/net/{xray-core,v2ray-geodata,sing-box,chinadns-ng,dns2socks,hysteria,ipt2socks,microsocks,naiveproxy,shadowsocks-libev,shadowsocks-rust,shadowsocksr-libev,simple-obfs,tcping,trojan-plus,tuic-client,v2ray-plugin,xray-plugin,geoview,shadow-tls,nikki,openlist,lucky}
 rm -rf feeds/luci/applications/luci-app-{passwall,mosdns,lucky,nikki,openclash,openlist*}
 rm -rf package/feeds/telephony
@@ -40,6 +42,7 @@ rm -rf feeds/luci/applications/luci-app-vlmcsd
 # ------------------------------------------------------------
 # 3. 插件仓库拉取
 # ------------------------------------------------------------
+log "克隆第三方插件"
 git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git package/passwall-packages
 git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2
 git clone --depth=1 https://github.com/ophub/luci-app-amlogic package/amlogic
@@ -62,6 +65,7 @@ git clone --depth=1 https://github.com/timsaya/openwrt-bandix package/openwrt-ba
 # ------------------------------------------------------------
 # 6. 注入 Nginx Quickfile 修复
 # ------------------------------------------------------------
+log "注入 Nginx Quickfile 修复"
 mkdir -p package/base-files/files/etc/uci-defaults
 cat > package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile << 'EOF'
 #!/bin/sh
@@ -78,3 +82,5 @@ uci commit nginx
 exit 0
 EOF
 chmod +x package/base-files/files/etc/uci-defaults/99-fix-nginx-quickfile
+# ------------------------------------------------------------
+log "完成 ✓"
