@@ -20,9 +20,9 @@ log "替换 Golang → 26.x"
 rm -rf feeds/packages/lang/golang
 git clone --depth=1 -b 26.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
 
-log "修复 lang-rust 出现404的问题"
-rm -rf feeds/packages/lang/rust
-git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
+#log "修复 lang-rust 出现404的问题"
+#rm -rf feeds/packages/lang/rust
+#git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 
 # ------------------------------------------------------------
 # 2. 彻底清理 feeds 冲突 (防止 PassWall, Nikki, TurboACC 等重复报错)
