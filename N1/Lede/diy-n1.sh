@@ -12,15 +12,16 @@ set -euo pipefail
 sed -i 's/192.168.1.1/192.168.123.2/g' package/base-files/files/bin/config_generate
 sed -i 's/LEDE/OpenWrt/g' package/base-files/files/bin/config_generate
 
-# ------------------------------------------------------------
-# 1.5 升级 Golang（关键稳健性修复）
-#     xray-core / mosdns-v5 / hysteria / sing-box / nikki(mihomo) 等均为 Go 编写，
-#     lede 官方 feeds 自带的 golang 版本经常跟不上这些包所需的最低 Go 版本，
-#     社区公认解法是用 sbwml 维护的预编译 bootstrap 版本替换，避免因 Go 版本过低导致编译中断
-# ------------------------------------------------------------
+# ============================================================
+# Golang + lang rust
+# ============================================================
+log "替换 Golang → 26.x"
 rm -rf feeds/packages/lang/golang
-git clone --depth=1 -b 26.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang \
-  || { echo "::error::克隆 packages_lang_golang 失败"; exit 1; }
+git clone --depth=1 -b 26.x https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+
+log "修复 lang-rust 出现404的问题"
+rm -rf feeds/packages/lang/rust
+git clone https://github.com/sbwml/packages_lang_rust feeds/packages/lang/rust
 
 # ------------------------------------------------------------
 # 2. 彻底清理 feeds 冲突 (防止 PassWall, Nikki, TurboACC 等重复报错)
@@ -43,23 +44,20 @@ git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall-package
 git clone --depth=1 https://github.com/Openwrt-Passwall/openwrt-passwall2.git package/passwall2
 git clone --depth=1 https://github.com/ophub/luci-app-amlogic package/amlogic
 git clone --depth=1 https://github.com/vernesong/OpenClash package/openclash
+
 git clone --depth=1 https://github.com/nikkinikki-org/OpenWrt-nikki package/nikki
+# ── nikki 自定义三处设置为‘不修改’ ─────────────────────────────
+log "nikki: 清除默认值 log_level/ui_url/tun_stack"
+sed -i "/option 'log_level' 'warning'/d" package/nikki/nikki/files/nikki.conf
+sed -i "\#option 'ui_url' 'https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip'#d" package/nikki/nikki/files/nikki.conf
+sed -i "/option 'tun_stack' 'mixed'/d" package/nikki/nikki/files/nikki.conf
+
 git clone --depth=1 -b v5 https://github.com/sbwml/luci-app-mosdns package/mosdns
 git clone --depth=1 https://github.com/sbwml/luci-app-openlist2 package/openlist2
 git clone --depth=1 https://github.com/sbwml/luci-app-quickfile package/luci-app-quickfile
 git clone --depth=1 https://github.com/gdy666/luci-app-lucky package/lucky
 git clone --depth=1 https://github.com/timsaya/luci-app-bandix package/luci-app-bandix
 git clone --depth=1 https://github.com/timsaya/openwrt-bandix package/openwrt-bandix
-# ------------------------------------------------------------
-# 4. 修复系统库依赖 (防止 armsr 架构下的编译中断)
-# ------------------------------------------------------------
-#sed -i 's/REENTRANT -D_GNU_SOURCE/LARGEFILE64_SOURCE/g' feeds/packages/lang/perl/Makefile
-
-# ------------------------------------------------------------
-# 5. 修正俩处错误的翻译
-# ------------------------------------------------------------
-#sed -i 's/<%:Up%>/<%:Move up%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
-#sed -i 's/<%:Down%>/<%:Move down%>/g' feeds/luci/modules/luci-compat/luasrc/view/cbi/tblsection.htm
 
 # ------------------------------------------------------------
 # 6. 注入 Nginx Quickfile 修复
